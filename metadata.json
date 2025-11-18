@@ -1,0 +1,5 @@
+{
+  "name": "MTG Rastreador de Ligas Commander",
+  "description": "Uma aplicação para gerenciar múltiplas ligas de Magic: The Gathering Commander. Acompanhe os pontos, veja o histórico de ligas passadas, e utilize o marcador de vidas integrado.",
+  "requestFramePermissions": []
+}
