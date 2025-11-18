@@ -17,7 +17,8 @@ const LeagueSummary: React.FC<LeagueSummaryProps> = ({ league, onReturn }) => {
 
   const generateResultText = () => {
     const date = new Date(league.createdAt).toLocaleDateString('pt-BR');
-    const header = `🏆 *Resultado Final da Liga Commander* - ${date} 🏆\n\n`;
+    const leagueName = league.name ? ` - ${league.name}` : '';
+    const header = `🏆 *Resultado Final da Liga Commander*${leagueName} 🏆\n📅 ${date}\n\n`;
     const winnerText = `👑 O Campeão é: *${winner?.name}*! 👑\n\n`;
     
     const body = sortedPlayers.map((p, i) => {
@@ -78,6 +79,7 @@ const LeagueSummary: React.FC<LeagueSummaryProps> = ({ league, onReturn }) => {
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400">{winner?.name || 'Desconhecido'}</span>
         </h2>
         <p className="text-indigo-300 font-bold text-lg uppercase tracking-widest mb-4">É o Campeão!</p>
+        <p className="text-white font-bold text-lg mb-1">{league.name}</p>
         <p className="text-slate-400 text-sm">
           Liga concluída em {new Date(league.createdAt).toLocaleDateString('pt-BR')}
         </p>

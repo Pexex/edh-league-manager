@@ -12,6 +12,7 @@ export interface Match {
 
 export interface League {
   id: string;
+  name: string;
   players: Player[];
   matches: Match[];
   winnerId: number | null;

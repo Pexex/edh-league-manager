@@ -6,12 +6,18 @@ import Scoreboard from './components/Scoreboard';
 import LeagueSummary from './components/WinnerDisplay';
 import RecordMatchModal from './components/RecordMatchModal';
 import LifeCounter from './components/LifeCounter';
+import CopyIcon from './components/icons/CopyIcon';
 
 const App: React.FC = () => {
   const [leagues, setLeagues] = useState<League[]>(() => {
     try {
       const savedLeagues = localStorage.getItem('mtgLeagues');
-      return savedLeagues ? JSON.parse(savedLeagues) : [];
+      const parsed = savedLeagues ? JSON.parse(savedLeagues) : [];
+      // Migração de dados antigos: garante que todas as ligas tenham nome
+      return parsed.map((l: any) => ({
+        ...l,
+        name: l.name || `Liga de ${new Date(l.createdAt).toLocaleDateString('pt-BR')}`
+      }));
     } catch (error) {
       console.error("Falha ao carregar ligas do localStorage", error);
       return [];
@@ -37,9 +43,10 @@ const App: React.FC = () => {
   const activeLeague = useMemo(() => leagues.find(l => l.id === activeLeagueId), [leagues, activeLeagueId]);
   const viewingLeague = useMemo(() => leagues.find(l => l.id === viewingLeagueId), [leagues, viewingLeagueId]);
 
-  const handleCreateLeague = (playerNames: string[]) => {
+  const handleCreateLeague = (leagueName: string, playerNames: string[]) => {
     const newLeague: League = {
       id: Date.now().toString(),
+      name: leagueName,
       createdAt: new Date().toISOString(),
       players: playerNames.map((name, index) => ({ id: index + 1, name, score: 0 })),
       matches: [],
@@ -132,34 +139,57 @@ const App: React.FC = () => {
 
   // --- Import / Export Logic ---
 
+  const handleCopyData = async () => {
+      try {
+          const dataStr = JSON.stringify(leagues, null, 2);
+          await navigator.clipboard.writeText(dataStr);
+          alert('Dados copiados para a área de transferência! Você pode colar no WhatsApp ou em um bloco de notas para salvar.');
+      } catch (err) {
+          console.error('Erro ao copiar', err);
+          alert('Erro ao copiar dados.');
+      }
+  };
+
   const handleExportData = async () => {
-    const dataStr = JSON.stringify(leagues, null, 2);
-    const fileName = `commander_leagues_backup_${new Date().toISOString().slice(0,10)}.json`;
-    const file = new File([dataStr], fileName, { type: 'application/json' });
+    try {
+        const dataStr = JSON.stringify(leagues, null, 2);
+        const fileName = `commander_backup_${new Date().toISOString().slice(0,10)}.json`;
+        const file = new File([dataStr], fileName, { type: 'application/json' });
 
-    // Tentativa de usar Web Share API (Mobile/WhatsApp)
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-            await navigator.share({
-                files: [file],
-                title: 'Backup Commander League',
-                text: 'Backup dos dados do aplicativo Commander League.'
-            });
-            return;
-        } catch (error) {
-            console.log('Compartilhamento cancelado ou falhou, usando fallback de download.', error);
+        // Tentativa de usar Web Share API (Mobile/WhatsApp)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Backup Commander League',
+                    text: 'Arquivo de backup dos dados do aplicativo Commander League.'
+                });
+                return; // Sucesso
+            } catch (error: any) {
+                if (error.name !== 'AbortError') {
+                   console.log('Compartilhamento falhou, tentando download...', error);
+                   alert('Compartilhamento direto falhou. Iniciando download do arquivo...');
+                } else {
+                   return; // Usuário cancelou
+                }
+            }
+        } else {
+            alert('Iniciando download do backup...');
         }
-    }
 
-    // Fallback para Download Tradicional (Desktop)
-    const url = URL.createObjectURL(new Blob([dataStr], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+        // Fallback para Download Tradicional (Desktop ou Mobile sem suporte a share de arquivos)
+        const url = URL.createObjectURL(new Blob([dataStr], { type: 'application/json' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error("Erro na exportação:", e);
+        alert("Erro ao exportar. Tente usar a opção 'Copiar Dados'.");
+    }
   };
 
   const handleImportClick = () => {
@@ -187,8 +217,13 @@ const App: React.FC = () => {
                         let addedCount = 0;
                         let updatedCount = 0;
 
-                        importedData.forEach((importedLeague: League) => {
+                        importedData.forEach((importedLeague: any) => {
                             if (!importedLeague.id || !importedLeague.players) return; // Skip inválidos
+                            
+                            // Assegurar que tenha nome
+                            if (!importedLeague.name) {
+                                importedLeague.name = `Liga Importada ${new Date(importedLeague.createdAt).toLocaleDateString()}`;
+                            }
 
                             const existingIndex = newLeagues.findIndex(l => l.id === importedLeague.id);
                             if (existingIndex >= 0) {
@@ -240,8 +275,8 @@ const App: React.FC = () => {
                   {activeLeagues.map(league => (
                     <div key={league.id} className="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-md hover:border-indigo-500 transition-colors flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div>
-                        <div className="font-semibold text-white">Liga Iniciada</div>
-                        <div className="text-sm text-slate-400">{new Date(league.createdAt).toLocaleDateString('pt-BR')} às {new Date(league.createdAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</div>
+                        <div className="font-bold text-xl text-white mb-1">{league.name}</div>
+                        <div className="text-sm text-slate-400">Iniciada em {new Date(league.createdAt).toLocaleDateString('pt-BR')} às {new Date(league.createdAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</div>
                         <div className="text-xs text-slate-500 mt-1">{league.players.map(p => p.name).join(', ')}</div>
                       </div>
                       <button onClick={() => handleResumeLeague(league.id)} className="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 px-6 rounded-lg transition active:bg-green-700 shadow-lg shadow-green-900/20">
@@ -261,8 +296,9 @@ const App: React.FC = () => {
                       return (
                           <div key={league.id} className="bg-slate-800/50 border border-slate-700/50 p-4 rounded-xl hover:bg-slate-800 transition-colors flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                               <div>
-                                  <p className="text-sm text-slate-400">{new Date(league.createdAt).toLocaleDateString('pt-BR')}</p>
-                                  <div className="font-semibold text-lg flex items-center gap-2">
+                                  <div className="font-bold text-lg text-slate-200">{league.name}</div>
+                                  <p className="text-xs text-slate-500 mb-1">{new Date(league.createdAt).toLocaleDateString('pt-BR')}</p>
+                                  <div className="font-semibold text-md flex items-center gap-2">
                                     <span>🏆</span>
                                     <span className="text-yellow-400">{winner?.name || 'N/A'}</span>
                                   </div>
@@ -317,6 +353,16 @@ const App: React.FC = () => {
                     onChange={handleFileImport} 
                     className="hidden" 
                 />
+            </div>
+            
+            <div className="mt-4 flex justify-center">
+                <button 
+                    onClick={handleCopyData}
+                    className="flex items-center gap-2 text-slate-400 hover:text-white text-sm py-2 px-4 rounded-lg transition-colors hover:bg-slate-800"
+                >
+                    <CopyIcon className="w-4 h-4" />
+                    <span>Copiar Dados (Alternativa)</span>
+                </button>
             </div>
         </div>
       </div>
