@@ -5,13 +5,16 @@ import CrownIcon from './icons/CrownIcon';
 import LanternIcon from './icons/LanternIcon';
 import WhatsAppIcon from './icons/WhatsAppIcon';
 import CopyIcon from './icons/CopyIcon';
+import EditIcon from './icons/EditIcon';
 
 interface ScoreboardProps {
   players: Player[];
   leadingScore: number;
+  onEditScores: () => void;
+  leagueName: string;
 }
 
-const Scoreboard: React.FC<ScoreboardProps> = ({ players, leadingScore }) => {
+const Scoreboard: React.FC<ScoreboardProps> = ({ players, leadingScore, onEditScores, leagueName }) => {
   const [showToast, setShowToast] = useState(false);
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
   
@@ -20,14 +23,22 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ players, leadingScore }) => {
   const isTie = scores.every(score => score === scores[0]);
 
   const generateRankingText = () => {
-    const date = new Date().toLocaleDateString('pt-BR');
-    const header = `🔥 *Ranking Liga Commander* - ${date} 🔥\n\n`;
+    const date = new Date().toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    const header = `🏆 *Ranking: ${leagueName}* 🏆\n📅 Atualizado em: ${date}\n\n`;
     const body = sortedPlayers.map((p, i) => {
         const rank = i + 1;
         let medal = `${rank}º`;
         if (rank === 1) medal = '🥇';
         if (rank === 2) medal = '🥈';
         if (rank === 3) medal = '🥉';
+        if (rank === 4) medal = '🔦';
         
         return `${medal} *${p.name}*: ${p.score} pts`;
     }).join('\n');
@@ -73,7 +84,16 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ players, leadingScore }) => {
         )}
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 px-1">
-            <h2 className="text-lg font-bold text-slate-400 uppercase tracking-wider">Ranking Atual</h2>
+            <div className="flex items-center gap-3">
+                <h2 className="text-lg font-bold text-slate-400 uppercase tracking-wider">Ranking Atual</h2>
+                <button 
+                    onClick={onEditScores}
+                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-indigo-400 rounded-lg transition border border-slate-700"
+                    title="Editar Pontuações Manualmente"
+                >
+                    <EditIcon className="w-4 h-4" />
+                </button>
+            </div>
             
             <div className="flex gap-2 w-full sm:w-auto">
                 <button 
@@ -81,7 +101,7 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ players, leadingScore }) => {
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold py-2 px-3 rounded-lg shadow transition active:scale-95 border border-slate-600"
                     title="Copiar Ranking"
                 >
-                    <span className="w-4 h-4"><CopyIcon /></span>
+                    <CopyIcon className="w-4 h-4" />
                     <span className="sm:hidden md:inline">Copiar</span>
                 </button>
                 
@@ -90,7 +110,7 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ players, leadingScore }) => {
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white text-sm font-bold py-2 px-3 rounded-lg shadow transition active:scale-95"
                     title="Compartilhar no WhatsApp"
                 >
-                    <span className="w-4 h-4"><WhatsAppIcon /></span>
+                    <WhatsAppIcon className="w-4 h-4" />
                     <span>WhatsApp</span>
                 </button>
             </div>

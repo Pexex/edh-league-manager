@@ -1,11 +1,14 @@
 import React from 'react';
 
-const WhatsAppIcon: React.FC = () => {
+interface IconProps {
+  className?: string;
+}
+
+const WhatsAppIcon: React.FC<IconProps> = ({ className = "w-6 h-6" }) => {
   return (
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
+      className={className}
       viewBox="0 0 24 24" 
       fill="currentColor"
     >

@@ -6,6 +6,8 @@ import Scoreboard from './components/Scoreboard';
 import LeagueSummary from './components/WinnerDisplay';
 import RecordMatchModal from './components/RecordMatchModal';
 import LifeCounter from './components/LifeCounter';
+import EditScoreModal from './components/EditScoreModal';
+import ImportModal from './components/ImportModal';
 import CopyIcon from './components/icons/CopyIcon';
 
 const App: React.FC = () => {
@@ -28,7 +30,9 @@ const App: React.FC = () => {
   const [viewingLeagueId, setViewingLeagueId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditScoreModalOpen, setIsEditScoreModalOpen] = useState(false);
   const [isLifeCounterOpen, setIsLifeCounterOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -57,6 +61,46 @@ const App: React.FC = () => {
     setIsCreating(false);
   };
 
+  const handleUpdateScores = (newScores: { [id: number]: number }) => {
+    if (!activeLeague) return;
+
+    const updatedLeagues = leagues.map(league => {
+      if (league.id === activeLeagueId) {
+        const updatedPlayers = league.players.map(player => {
+          if (typeof newScores[player.id] === 'number') {
+            return { ...player, score: newScores[player.id] };
+          }
+          return player;
+        });
+
+        // Recalculate winner based on new scores
+        let newWinnerId: number | null = null;
+        const winners = updatedPlayers
+            .filter(p => p.score >= WINNING_SCORE)
+            .sort((a, b) => b.score - a.score);
+        
+        if (winners.length > 0) {
+            newWinnerId = winners[0].id;
+        }
+
+        return { 
+          ...league, 
+          players: updatedPlayers, 
+          winnerId: newWinnerId 
+        };
+      }
+      return league;
+    });
+    
+    const updatedActiveLeague = updatedLeagues.find(l => l.id === activeLeagueId);
+    setLeagues(updatedLeagues);
+
+    if (updatedActiveLeague && updatedActiveLeague.winnerId) {
+      setViewingLeagueId(activeLeagueId);
+      setActiveLeagueId(null);
+    }
+  };
+
   const handleRecordWin = (wins: { [key: number]: number }) => {
     if (!activeLeague) return;
 
@@ -64,7 +108,6 @@ const App: React.FC = () => {
       if (league.id === activeLeagueId) {
         const newMatches: Match[] = [];
         const now = new Date().toISOString();
-        let hasPotentialWinner = false;
 
         const updatedPlayers = league.players.map(player => {
           const winCount = wins[player.id] || 0;
@@ -77,23 +120,15 @@ const App: React.FC = () => {
               });
             }
             const newScore = player.score + winCount;
-            if (newScore >= WINNING_SCORE) {
-              hasPotentialWinner = true;
-            }
             return { ...player, score: newScore };
           }
           return player;
         });
 
         let newWinnerId: number | null = league.winnerId;
-        if (hasPotentialWinner) {
-          const potentialWinners = updatedPlayers
-            .filter(p => p.score >= WINNING_SCORE)
-            .sort((a, b) => b.score - a.score);
-          
-          if (potentialWinners.length > 0) {
-            newWinnerId = potentialWinners[0].id;
-          }
+        const winners = updatedPlayers.filter(p => p.score >= WINNING_SCORE).sort((a,b) => b.score - a.score);
+        if (winners.length > 0) {
+            newWinnerId = winners[0].id;
         }
 
         return { 
@@ -192,10 +227,38 @@ const App: React.FC = () => {
     }
   };
 
-  const handleImportClick = () => {
-    if (fileInputRef.current) {
-        fileInputRef.current.value = ''; // Reset para permitir selecionar o mesmo arquivo
-        fileInputRef.current.click();
+  // Nova função centralizada para processar dados de backup (seja arquivo ou texto)
+  const processImportedData = (data: any) => {
+    if (Array.isArray(data)) {
+        setLeagues(prevLeagues => {
+            const newLeagues = [...prevLeagues];
+            let addedCount = 0;
+            let updatedCount = 0;
+
+            data.forEach((importedLeague: any) => {
+                if (!importedLeague.id || !importedLeague.players) return; // Skip inválidos
+                
+                // Assegurar que tenha nome
+                if (!importedLeague.name) {
+                    importedLeague.name = `Liga Importada ${new Date(importedLeague.createdAt).toLocaleDateString()}`;
+                }
+
+                const existingIndex = newLeagues.findIndex(l => l.id === importedLeague.id);
+                if (existingIndex >= 0) {
+                    newLeagues[existingIndex] = importedLeague; // Atualiza existente
+                    updatedCount++;
+                } else {
+                    newLeagues.push(importedLeague); // Adiciona nova
+                    addedCount++;
+                }
+            });
+            
+            alert(`Importação concluída!\n${addedCount} ligas adicionadas.\n${updatedCount} ligas atualizadas.`);
+            return newLeagues;
+        });
+        setIsImportModalOpen(false); // Fecha o modal após sucesso
+    } else {
+        alert('Formato de dados inválido. O backup deve conter uma lista de ligas.');
     }
   };
 
@@ -209,38 +272,7 @@ const App: React.FC = () => {
             const result = e.target?.result;
             if (typeof result === 'string') {
                 const importedData = JSON.parse(result);
-                
-                if (Array.isArray(importedData)) {
-                    // Validação básica e Merge
-                    setLeagues(prevLeagues => {
-                        const newLeagues = [...prevLeagues];
-                        let addedCount = 0;
-                        let updatedCount = 0;
-
-                        importedData.forEach((importedLeague: any) => {
-                            if (!importedLeague.id || !importedLeague.players) return; // Skip inválidos
-                            
-                            // Assegurar que tenha nome
-                            if (!importedLeague.name) {
-                                importedLeague.name = `Liga Importada ${new Date(importedLeague.createdAt).toLocaleDateString()}`;
-                            }
-
-                            const existingIndex = newLeagues.findIndex(l => l.id === importedLeague.id);
-                            if (existingIndex >= 0) {
-                                newLeagues[existingIndex] = importedLeague; // Atualiza existente
-                                updatedCount++;
-                            } else {
-                                newLeagues.push(importedLeague); // Adiciona nova
-                                addedCount++;
-                            }
-                        });
-                        
-                        alert(`Importação concluída!\n${addedCount} ligas adicionadas.\n${updatedCount} ligas atualizadas.`);
-                        return newLeagues;
-                    });
-                } else {
-                    alert('Formato de arquivo inválido. O arquivo deve conter uma lista de ligas.');
-                }
+                processImportedData(importedData);
             }
         } catch (error) {
             console.error("Erro ao importar arquivo", error);
@@ -248,8 +280,24 @@ const App: React.FC = () => {
         }
     };
     reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
   };
 
+  const handleTextImport = (text: string) => {
+      try {
+          const importedData = JSON.parse(text);
+          processImportedData(importedData);
+      } catch (error) {
+          console.error("Erro ao importar texto", error);
+          alert('Texto inválido. Certifique-se de copiar todo o conteúdo JSON começando com [ e terminando com ].');
+      }
+  };
+
+  const requestFileUpload = () => {
+      if (fileInputRef.current) {
+          fileInputRef.current.click();
+      }
+  };
   
   const renderDashboard = () => {
     const activeLeagues = leagues.filter(l => l.winnerId === null);
@@ -336,14 +384,15 @@ const App: React.FC = () => {
                     </div>
                 </button>
 
+                {/* Botão atualizado para abrir o Modal */}
                 <button 
-                    onClick={handleImportClick}
+                    onClick={() => setIsImportModalOpen(true)}
                     className="flex items-center justify-center gap-3 bg-slate-800 hover:bg-green-900/30 border border-slate-700 hover:border-green-500/50 text-slate-300 hover:text-green-300 font-bold py-4 px-4 rounded-xl transition-all"
                 >
                     <span className="text-xl">📥</span>
                     <div className="text-left">
                         <div className="text-sm">Importar Backup</div>
-                        <div className="text-[10px] opacity-60 font-normal">Carregar arquivo .json</div>
+                        <div className="text-[10px] opacity-60 font-normal">Arquivo ou Colar Texto</div>
                     </div>
                 </button>
                 <input 
@@ -365,6 +414,15 @@ const App: React.FC = () => {
                 </button>
             </div>
         </div>
+
+        {/* Modal de Importação */}
+        <ImportModal 
+            isOpen={isImportModalOpen} 
+            onClose={() => setIsImportModalOpen(false)} 
+            onRequestFileUpload={requestFileUpload}
+            onImportText={handleTextImport}
+        />
+
       </div>
     );
   }
@@ -379,7 +437,12 @@ const App: React.FC = () => {
     if (activeLeague) {
       return (
         <>
-          <Scoreboard players={activeLeague.players} leadingScore={leadingScore} />
+          <Scoreboard 
+            players={activeLeague.players} 
+            leadingScore={leadingScore} 
+            onEditScores={() => setIsEditScoreModalOpen(true)}
+            leagueName={activeLeague.name}
+          />
           
           {/* Responsive Bottom Bar */}
           <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-700 p-3 z-40 safe-area-pb">
@@ -408,6 +471,7 @@ const App: React.FC = () => {
           </div>
           
           <RecordMatchModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} players={activeLeague.players} onRecordWin={handleRecordWin} />
+          <EditScoreModal isOpen={isEditScoreModalOpen} onClose={() => setIsEditScoreModalOpen(false)} players={activeLeague.players} onSave={handleUpdateScores} />
         </>
       );
     }

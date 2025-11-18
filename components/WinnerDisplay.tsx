@@ -18,7 +18,7 @@ const LeagueSummary: React.FC<LeagueSummaryProps> = ({ league, onReturn }) => {
   const generateResultText = () => {
     const date = new Date(league.createdAt).toLocaleDateString('pt-BR');
     const leagueName = league.name ? ` - ${league.name}` : '';
-    const header = `🏆 *Resultado Final da Liga Commander*${leagueName} 🏆\n📅 ${date}\n\n`;
+    const header = `🏆 *Resultado Final: ${league.name}* 🏆\n📅 ${date}\n\n`;
     const winnerText = `👑 O Campeão é: *${winner?.name}*! 👑\n\n`;
     
     const body = sortedPlayers.map((p, i) => {
@@ -27,6 +27,7 @@ const LeagueSummary: React.FC<LeagueSummaryProps> = ({ league, onReturn }) => {
         if (rank === 1) medal = '🥇';
         if (rank === 2) medal = '🥈';
         if (rank === 3) medal = '🥉';
+        if (rank === 4) medal = '🔦';
         
         return `${medal} *${p.name}*: ${p.score} pts`;
     }).join('\n');
@@ -117,7 +118,7 @@ const LeagueSummary: React.FC<LeagueSummaryProps> = ({ league, onReturn }) => {
           onClick={handleCopy}
           className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-3.5 px-6 rounded-xl shadow-lg border border-slate-600 transition-all transform active:scale-95 flex items-center justify-center gap-2"
         >
-           <span className="w-5 h-5"><CopyIcon /></span>
+           <CopyIcon className="w-5 h-5" />
            Copiar Texto
         </button>
 
@@ -125,7 +126,7 @@ const LeagueSummary: React.FC<LeagueSummaryProps> = ({ league, onReturn }) => {
           onClick={handleShare}
           className="bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-green-900/20 transition-all transform active:scale-95 flex items-center justify-center gap-2"
         >
-           <span className="w-6 h-6"><WhatsAppIcon /></span>
+           <WhatsAppIcon className="w-6 h-6" />
            WhatsApp
         </button>
 
