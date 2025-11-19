@@ -9,13 +9,13 @@ import LifeCounter from './components/LifeCounter';
 import EditScoreModal from './components/EditScoreModal';
 import ImportModal from './components/ImportModal';
 import CopyIcon from './components/icons/CopyIcon';
+import FullScreenIcon from './components/icons/FullScreenIcon';
 
 const App: React.FC = () => {
   const [leagues, setLeagues] = useState<League[]>(() => {
     try {
       const savedLeagues = localStorage.getItem('mtgLeagues');
       const parsed = savedLeagues ? JSON.parse(savedLeagues) : [];
-      // Migração de dados antigos: garante que todas as ligas tenham nome
       return parsed.map((l: any) => ({
         ...l,
         name: l.name || `Liga de ${new Date(l.createdAt).toLocaleDateString('pt-BR')}`
@@ -33,6 +33,7 @@ const App: React.FC = () => {
   const [isEditScoreModalOpen, setIsEditScoreModalOpen] = useState(false);
   const [isLifeCounterOpen, setIsLifeCounterOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -43,6 +44,27 @@ const App: React.FC = () => {
         console.error("Falha ao salvar ligas no localStorage", error);
     }
   }, [leagues]);
+
+  // Monitora mudanças no Fullscreen para atualizar o ícone caso o usuário use ESC ou gestos
+  useEffect(() => {
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullScreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  }, []);
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((e) => {
+        console.error(`Error attempting to enable full-screen mode: ${e.message} (${e.name})`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
 
   const activeLeague = useMemo(() => leagues.find(l => l.id === activeLeagueId), [leagues, activeLeagueId]);
   const viewingLeague = useMemo(() => leagues.find(l => l.id === viewingLeagueId), [leagues, viewingLeagueId]);
@@ -73,7 +95,6 @@ const App: React.FC = () => {
           return player;
         });
 
-        // Recalculate winner based on new scores
         let newWinnerId: number | null = null;
         const winners = updatedPlayers
             .filter(p => p.score >= WINNING_SCORE)
@@ -157,7 +178,6 @@ const App: React.FC = () => {
     setIsLifeCounterOpen(false);
   };
 
-
   const handleReturnToDashboard = () => {
     setActiveLeagueId(null);
     setViewingLeagueId(null);
@@ -191,7 +211,6 @@ const App: React.FC = () => {
         const fileName = `commander_backup_${new Date().toISOString().slice(0,10)}.json`;
         const file = new File([dataStr], fileName, { type: 'application/json' });
 
-        // Tentativa de usar Web Share API (Mobile/WhatsApp)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             try {
                 await navigator.share({
@@ -199,20 +218,19 @@ const App: React.FC = () => {
                     title: 'Backup Commander League',
                     text: 'Arquivo de backup dos dados do aplicativo Commander League.'
                 });
-                return; // Sucesso
+                return; 
             } catch (error: any) {
                 if (error.name !== 'AbortError') {
                    console.log('Compartilhamento falhou, tentando download...', error);
                    alert('Compartilhamento direto falhou. Iniciando download do arquivo...');
                 } else {
-                   return; // Usuário cancelou
+                   return; 
                 }
             }
         } else {
             alert('Iniciando download do backup...');
         }
 
-        // Fallback para Download Tradicional (Desktop ou Mobile sem suporte a share de arquivos)
         const url = URL.createObjectURL(new Blob([dataStr], { type: 'application/json' }));
         const link = document.createElement('a');
         link.href = url;
@@ -227,7 +245,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Nova função centralizada para processar dados de backup (seja arquivo ou texto)
   const processImportedData = (data: any) => {
     if (Array.isArray(data)) {
         setLeagues(prevLeagues => {
@@ -236,19 +253,18 @@ const App: React.FC = () => {
             let updatedCount = 0;
 
             data.forEach((importedLeague: any) => {
-                if (!importedLeague.id || !importedLeague.players) return; // Skip inválidos
+                if (!importedLeague.id || !importedLeague.players) return; 
                 
-                // Assegurar que tenha nome
                 if (!importedLeague.name) {
                     importedLeague.name = `Liga Importada ${new Date(importedLeague.createdAt).toLocaleDateString()}`;
                 }
 
                 const existingIndex = newLeagues.findIndex(l => l.id === importedLeague.id);
                 if (existingIndex >= 0) {
-                    newLeagues[existingIndex] = importedLeague; // Atualiza existente
+                    newLeagues[existingIndex] = importedLeague;
                     updatedCount++;
                 } else {
-                    newLeagues.push(importedLeague); // Adiciona nova
+                    newLeagues.push(importedLeague);
                     addedCount++;
                 }
             });
@@ -256,7 +272,7 @@ const App: React.FC = () => {
             alert(`Importação concluída!\n${addedCount} ligas adicionadas.\n${updatedCount} ligas atualizadas.`);
             return newLeagues;
         });
-        setIsImportModalOpen(false); // Fecha o modal após sucesso
+        setIsImportModalOpen(false);
     } else {
         alert('Formato de dados inválido. O backup deve conter uma lista de ligas.');
     }
@@ -280,7 +296,7 @@ const App: React.FC = () => {
         }
     };
     reader.readAsText(file);
-    if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleTextImport = (text: string) => {
@@ -369,7 +385,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Data Management Section */}
         <div className="border-t border-slate-800 pt-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             <h3 className="text-lg font-bold text-slate-500 mb-4 uppercase tracking-wider text-xs">Gerenciamento de Dados</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -384,7 +399,6 @@ const App: React.FC = () => {
                     </div>
                 </button>
 
-                {/* Botão atualizado para abrir o Modal */}
                 <button 
                     onClick={() => setIsImportModalOpen(true)}
                     className="flex items-center justify-center gap-3 bg-slate-800 hover:bg-green-900/30 border border-slate-700 hover:border-green-500/50 text-slate-300 hover:text-green-300 font-bold py-4 px-4 rounded-xl transition-all"
@@ -415,14 +429,12 @@ const App: React.FC = () => {
             </div>
         </div>
 
-        {/* Modal de Importação */}
         <ImportModal 
             isOpen={isImportModalOpen} 
             onClose={() => setIsImportModalOpen(false)} 
             onRequestFileUpload={requestFileUpload}
             onImportText={handleTextImport}
         />
-
       </div>
     );
   }
@@ -444,7 +456,6 @@ const App: React.FC = () => {
             leagueName={activeLeague.name}
           />
           
-          {/* Responsive Bottom Bar */}
           <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-700 p-3 z-40 safe-area-pb">
              <div className="max-w-5xl mx-auto grid grid-cols-2 sm:flex sm:items-center sm:justify-center gap-3">
                 <button 
@@ -484,15 +495,24 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-900 text-gray-100 font-sans selection:bg-indigo-500 selection:text-white">
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         {!isLifeCounterOpen && (
-            <header className="text-center mb-6 sm:mb-10 pt-2">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 drop-shadow-sm tracking-tight">
-                Commander League
-            </h1>
-            {activeLeague && (
-                <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-400">
-                    Liga Ativa
-                </div>
-            )}
+            <header className="text-center mb-6 sm:mb-10 pt-2 relative">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 drop-shadow-sm tracking-tight">
+                    Commander League
+                </h1>
+                {activeLeague && (
+                    <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-400">
+                        Liga Ativa
+                    </div>
+                )}
+
+                {/* Full Screen Toggle Button in Header */}
+                <button
+                    onClick={toggleFullScreen}
+                    className="absolute top-0 right-0 mt-1 p-2 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700 rounded-full transition-colors"
+                    title={isFullScreen ? "Sair da Tela Cheia" : "Tela Cheia"}
+                >
+                    <FullScreenIcon isFullScreen={isFullScreen} />
+                </button>
             </header>
         )}
         <main>
