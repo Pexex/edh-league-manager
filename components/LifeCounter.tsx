@@ -18,24 +18,26 @@ interface PlayerState {
   isEliminated: boolean;
 }
 
-// Expanded Color Palette
+// Paleta de cores refinada e elegante
 const PLAYER_COLORS = [
-  { name: 'Azul', border: 'border-blue-500', bg: 'bg-blue-900', text: 'text-blue-200', shadow: 'shadow-blue-900/50', swatch: 'bg-blue-500' },
-  { name: 'Vermelho', border: 'border-red-600', bg: 'bg-red-950', text: 'text-red-200', shadow: 'shadow-red-600/50', swatch: 'bg-red-600' },
-  { name: 'Verde', border: 'border-green-600', bg: 'bg-green-950', text: 'text-green-200', shadow: 'shadow-green-600/50', swatch: 'bg-green-600' },
-  { name: 'Amarelo (Branco)', border: 'border-yellow-500', bg: 'bg-yellow-950', text: 'text-yellow-200', shadow: 'shadow-yellow-500/50', swatch: 'bg-yellow-500' },
-  { name: 'Roxo (Preto)', border: 'border-purple-600', bg: 'bg-purple-950', text: 'text-purple-200', shadow: 'shadow-purple-900/50', swatch: 'bg-purple-600' },
-  { name: 'Laranja', border: 'border-orange-500', bg: 'bg-orange-950', text: 'text-orange-200', shadow: 'shadow-orange-900/50', swatch: 'bg-orange-500' },
-  { name: 'Rosa', border: 'border-pink-500', bg: 'bg-pink-950', text: 'text-pink-200', shadow: 'shadow-pink-900/50', swatch: 'bg-pink-500' },
-  { name: 'Turquesa', border: 'border-cyan-500', bg: 'bg-cyan-950', text: 'text-cyan-200', shadow: 'shadow-cyan-900/50', swatch: 'bg-cyan-500' },
-  { name: 'Cinza (Incolor)', border: 'border-slate-400', bg: 'bg-slate-800', text: 'text-slate-200', shadow: 'shadow-slate-600/50', swatch: 'bg-slate-400' },
-  { name: 'Escuro', border: 'border-gray-600', bg: 'bg-gray-950', text: 'text-gray-300', shadow: 'shadow-gray-900/50', swatch: 'bg-gray-700' },
-  { name: 'Dourado', border: 'border-yellow-600', bg: 'bg-yellow-900', text: 'text-yellow-100', shadow: 'shadow-yellow-600/50', swatch: 'bg-yellow-600' },
-  { name: 'Lima', border: 'border-lime-500', bg: 'bg-lime-900', text: 'text-lime-200', shadow: 'shadow-lime-500/50', swatch: 'bg-lime-500' },
-  { name: 'Fúcsia', border: 'border-fuchsia-600', bg: 'bg-fuchsia-950', text: 'text-fuchsia-200', shadow: 'shadow-fuchsia-600/50', swatch: 'bg-fuchsia-600' },
-  { name: 'Âmbar', border: 'border-amber-600', bg: 'bg-amber-950', text: 'text-amber-200', shadow: 'shadow-amber-600/50', swatch: 'bg-amber-600' },
-  { name: 'Índigo', border: 'border-indigo-500', bg: 'bg-indigo-950', text: 'text-indigo-200', shadow: 'shadow-indigo-500/50', swatch: 'bg-indigo-500' },
-  { name: 'Verde-azulado', border: 'border-teal-500', bg: 'bg-teal-950', text: 'text-teal-200', shadow: 'shadow-teal-500/50', swatch: 'bg-teal-500' },
+  { name: 'Branco (Ordem)', border: 'border-stone-200', bg: 'bg-stone-800', text: 'text-stone-100', shadow: 'shadow-stone-200/30' },
+  { name: 'Azul (Mente)', border: 'border-blue-500', bg: 'bg-blue-950', text: 'text-blue-100', shadow: 'shadow-blue-500/30' },
+  { name: 'Preto (Morte)', border: 'border-purple-900', bg: 'bg-gray-950', text: 'text-gray-200', shadow: 'shadow-purple-900/30' },
+  { name: 'Vermelho (Caos)', border: 'border-red-600', bg: 'bg-red-950', text: 'text-red-100', shadow: 'shadow-red-600/30' },
+  { name: 'Verde (Natureza)', border: 'border-green-500', bg: 'bg-green-950', text: 'text-green-100', shadow: 'shadow-green-500/30' },
+  
+  { name: 'Azorius (Ouro)', border: 'border-yellow-400', bg: 'bg-sky-950', text: 'text-yellow-100', shadow: 'shadow-yellow-400/30' },
+  { name: 'Izzet (Energia)', border: 'border-cyan-400', bg: 'bg-indigo-950', text: 'text-cyan-100', shadow: 'shadow-cyan-400/30' },
+  { name: 'Rakdos (Sangue)', border: 'border-rose-600', bg: 'bg-neutral-950', text: 'text-rose-200', shadow: 'shadow-rose-600/30' },
+  { name: 'Golgari (Limo)', border: 'border-lime-500', bg: 'bg-emerald-950', text: 'text-lime-100', shadow: 'shadow-lime-500/30' },
+  { name: 'Boros (Fogo)', border: 'border-orange-500', bg: 'bg-orange-950', text: 'text-orange-100', shadow: 'shadow-orange-500/30' },
+  
+  { name: 'Simic (Evolução)', border: 'border-teal-400', bg: 'bg-teal-950', text: 'text-teal-100', shadow: 'shadow-teal-400/30' },
+  { name: 'Orzhov (Espírito)', border: 'border-fuchsia-400', bg: 'bg-slate-900', text: 'text-fuchsia-100', shadow: 'shadow-fuchsia-400/30' },
+  { name: 'Incolor (Vazio)', border: 'border-slate-500', bg: 'bg-slate-900', text: 'text-slate-300', shadow: 'shadow-slate-500/30' },
+  { name: 'Dimir (Sombra)', border: 'border-indigo-500', bg: 'bg-gray-900', text: 'text-indigo-200', shadow: 'shadow-indigo-500/30' },
+  { name: 'Fada (Brilho)', border: 'border-pink-400', bg: 'bg-fuchsia-950', text: 'text-pink-100', shadow: 'shadow-pink-400/30' },
+  { name: 'Selva (Âmbar)', border: 'border-amber-500', bg: 'bg-yellow-950', text: 'text-amber-100', shadow: 'shadow-amber-500/30' },
 ];
 
 // --- Sub-Components ---
@@ -43,28 +45,53 @@ const PLAYER_COLORS = [
 interface ColorPickerModalProps {
     player: Player;
     currentColorIndex: number;
+    takenColorIndices: number[];
     onSelect: (colorIndex: number) => void;
     onClose: () => void;
 }
 
-const ColorPickerModal: React.FC<ColorPickerModalProps> = ({ player, currentColorIndex, onSelect, onClose }) => {
+const ColorPickerModal: React.FC<ColorPickerModalProps> = ({ player, currentColorIndex, takenColorIndices, onSelect, onClose }) => {
     return (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[120]" onClick={onClose}>
-            <div className="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-sm p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
-                <h3 className="text-xl font-bold text-center mb-6 text-white">Cor de {player.name}</h3>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[120]" onClick={onClose}>
+            <div className="bg-slate-900 rounded-3xl border border-slate-700 w-full max-w-sm p-8 shadow-2xl animate-bounce-in" onClick={e => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-center mb-2 text-white">Tema de {player.name}</h3>
+                <p className="text-slate-400 text-center text-xs mb-6">Escolha uma cor exclusiva para este jogador</p>
+                
                 <div className="grid grid-cols-4 gap-4 justify-items-center">
-                    {PLAYER_COLORS.map((theme, index) => (
-                        <button
-                            key={index}
-                            onClick={() => { onSelect(index); onClose(); }}
-                            className={`w-12 h-12 rounded-full ${theme.swatch} border-2 transition-transform active:scale-90 flex items-center justify-center ${currentColorIndex === index ? 'border-white scale-110 shadow-lg shadow-white/20' : 'border-transparent hover:border-white/50'}`}
-                            title={theme.name}
-                        >
-                            {currentColorIndex === index && <span className="text-white font-bold text-lg">✓</span>}
-                        </button>
-                    ))}
+                    {PLAYER_COLORS.map((theme, index) => {
+                        const isTaken = takenColorIndices.includes(index);
+                        const isSelected = currentColorIndex === index;
+
+                        return (
+                            <button
+                                key={index}
+                                onClick={() => { 
+                                    if (!isTaken) {
+                                        onSelect(index); 
+                                        onClose(); 
+                                    }
+                                }}
+                                disabled={isTaken && !isSelected}
+                                className={`
+                                    relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300
+                                    ${theme.bg} ${theme.border} border-4
+                                    ${isSelected ? 'scale-110 shadow-[0_0_20px_rgba(255,255,255,0.3)] z-10 ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''}
+                                    ${isTaken && !isSelected ? 'opacity-30 grayscale cursor-not-allowed border-dashed' : 'hover:scale-105 cursor-pointer'}
+                                `}
+                                title={isTaken ? `${theme.name} (Em uso)` : theme.name}
+                            >
+                                {isSelected && (
+                                    <span className="text-white font-bold text-xl drop-shadow-md">✓</span>
+                                )}
+                                {isTaken && !isSelected && (
+                                    <span className="text-slate-300 font-bold text-xs uppercase tracking-tighter opacity-80">Uso</span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
-                <button onClick={onClose} className="w-full mt-8 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition-colors">
+                
+                <button onClick={onClose} className="w-full mt-8 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 rounded-xl transition-colors">
                     Cancelar
                 </button>
             </div>
@@ -594,13 +621,16 @@ const PlayerQuadrant: React.FC<PlayerQuadrantProps> = ({
       <div className={`relative w-full h-full flex flex-col ${theme.bg} overflow-hidden ${isRotated ? 'rotate-180 border-b-2' : 'border-t-2'} ${theme.border} transition-all duration-500`}>
         
         {/* Player Name Header - Golden Ratio Tier 3 - Clickable for Color */}
-        <div className="flex-none py-2 text-center relative z-20">
+        <div className="flex-none relative h-[10%] min-h-[40px] flex items-center justify-center z-30 pt-2">
+             <h3 className={`font-bold truncate px-8 text-[3.5vmin] leading-tight ${theme.text} opacity-90`}>
+                {player.name}
+             </h3>
              <button 
                 onClick={onOpenColorPicker}
-                className={`font-bold truncate px-3 py-1 rounded-full text-[3.5vmin] leading-tight ${theme.text} opacity-90 hover:bg-white/10 transition-colors`}
+                className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 p-2 opacity-50 hover:opacity-100 hover:bg-black/20 rounded-full transition-all active:scale-95"
+                title="Alterar cor"
              >
-                {player.name}
-                <span className="ml-1 text-[2vmin] opacity-50">🎨</span>
+                <div className="text-xl">🎨</div>
              </button>
         </div>
 
@@ -937,6 +967,10 @@ const LifeCounter: React.FC<LifeCounterProps> = ({ players, onClose, onConfirmWi
             <ColorPickerModal 
                 player={editingColorOf}
                 currentColorIndex={playerThemes[editingColorOf.id] ?? 0}
+                takenColorIndices={Object.entries(playerThemes)
+                    .filter(([pId, _]) => parseInt(pId) !== editingColorOf.id)
+                    .map(([_, cIdx]) => cIdx)
+                }
                 onSelect={(newIndex) => setPlayerThemes(prev => ({ ...prev, [editingColorOf.id]: newIndex }))}
                 onClose={() => setEditingColorOf(null)}
             />
