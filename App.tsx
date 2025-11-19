@@ -8,14 +8,19 @@ import RecordMatchModal from './components/RecordMatchModal';
 import LifeCounter from './components/LifeCounter';
 import EditScoreModal from './components/EditScoreModal';
 import ImportModal from './components/ImportModal';
+import LeagueSettingsModal from './components/LeagueSettingsModal';
+import ConfirmModal from './components/ConfirmModal';
 import CopyIcon from './components/icons/CopyIcon';
 import FullScreenIcon from './components/icons/FullScreenIcon';
+import EditIcon from './components/icons/EditIcon';
+import TrashIcon from './components/icons/TrashIcon';
 
 const App: React.FC = () => {
   const [leagues, setLeagues] = useState<League[]>(() => {
     try {
       const savedLeagues = localStorage.getItem('mtgLeagues');
       const parsed = savedLeagues ? JSON.parse(savedLeagues) : [];
+      // Migração de dados antigos: garante que todas as ligas tenham nome
       return parsed.map((l: any) => ({
         ...l,
         name: l.name || `Liga de ${new Date(l.createdAt).toLocaleDateString('pt-BR')}`
@@ -29,10 +34,15 @@ const App: React.FC = () => {
   const [activeLeagueId, setActiveLeagueId] = useState<string | null>(null);
   const [viewingLeagueId, setViewingLeagueId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditScoreModalOpen, setIsEditScoreModalOpen] = useState(false);
   const [isLifeCounterOpen, setIsLifeCounterOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [editingLeague, setEditingLeague] = useState<League | null>(null); // For LeagueSettingsModal
+  const [leagueToDeleteId, setLeagueToDeleteId] = useState<string | null>(null); // For ConfirmModal
+
   const [isFullScreen, setIsFullScreen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +92,40 @@ const App: React.FC = () => {
     setActiveLeagueId(newLeague.id);
     setIsCreating(false);
   };
+
+  // --- Manage Leagues Logic (Delete / Edit) ---
+
+  const handleRequestDelete = (leagueId: string) => {
+      setLeagueToDeleteId(leagueId);
+  };
+
+  const confirmDeleteLeague = () => {
+    if (leagueToDeleteId) {
+        setLeagues(prev => prev.filter(l => l.id !== leagueToDeleteId));
+        if (activeLeagueId === leagueToDeleteId) setActiveLeagueId(null);
+        if (viewingLeagueId === leagueToDeleteId) setViewingLeagueId(null);
+        setLeagueToDeleteId(null);
+    }
+  };
+
+  const handleSaveLeagueDetails = (leagueId: string, newName: string, newPlayerNames: { [id: number]: string }) => {
+    setLeagues(prev => prev.map(l => {
+        if (l.id === leagueId) {
+            return {
+                ...l,
+                name: newName,
+                players: l.players.map(p => ({
+                    ...p,
+                    name: newPlayerNames[p.id] || p.name
+                }))
+            };
+        }
+        return l;
+    }));
+    setEditingLeague(null);
+  };
+
+  // --- Game Logic ---
 
   const handleUpdateScores = (newScores: { [id: number]: number }) => {
     if (!activeLeague) return;
@@ -337,13 +381,40 @@ const App: React.FC = () => {
                 </h2>
                 <div className="grid gap-3">
                   {activeLeagues.map(league => (
-                    <div key={league.id} className="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-md hover:border-indigo-500 transition-colors flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                      <div>
-                        <div className="font-bold text-xl text-white mb-1">{league.name}</div>
+                    <div key={league.id} className="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-md hover:border-indigo-500 transition-colors relative group flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pr-16">
+                        {/* Action Buttons - Unified Segmented Control */}
+                        <div className="absolute top-3 right-3 flex flex-col z-30 bg-slate-900 border border-slate-600 rounded-lg shadow-xl overflow-hidden">
+                            <button 
+                                onClick={(e) => { 
+                                    e.preventDefault();
+                                    e.stopPropagation(); 
+                                    setEditingLeague(league); 
+                                }}
+                                className="p-2.5 hover:bg-slate-800 text-slate-400 hover:text-indigo-300 transition-colors border-b border-slate-700 flex items-center justify-center"
+                                title="Editar Liga"
+                            >
+                                <EditIcon className="w-5 h-5" />
+                            </button>
+                            <button 
+                                onClick={(e) => { 
+                                    e.preventDefault();
+                                    e.stopPropagation(); 
+                                    handleRequestDelete(league.id); 
+                                }}
+                                className="p-2.5 hover:bg-slate-800 text-slate-400 hover:text-red-400 transition-colors flex items-center justify-center"
+                                title="Excluir Liga"
+                            >
+                                <TrashIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                      <div className="w-full">
+                        <div className="font-bold text-xl text-white mb-1 pr-4 truncate">{league.name}</div>
                         <div className="text-sm text-slate-400">Iniciada em {new Date(league.createdAt).toLocaleDateString('pt-BR')} às {new Date(league.createdAt).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</div>
                         <div className="text-xs text-slate-500 mt-1">{league.players.map(p => p.name).join(', ')}</div>
                       </div>
-                      <button onClick={() => handleResumeLeague(league.id)} className="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 px-6 rounded-lg transition active:bg-green-700 shadow-lg shadow-green-900/20">
+                      
+                      <button onClick={() => handleResumeLeague(league.id)} className="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 px-6 rounded-lg transition active:bg-green-700 shadow-lg shadow-green-900/20 mt-2 sm:mt-0">
                         Continuar
                       </button>
                     </div>
@@ -358,16 +429,43 @@ const App: React.FC = () => {
                   {completedLeagues.map(league => {
                       const winner = league.players.find(p => p.id === league.winnerId);
                       return (
-                          <div key={league.id} className="bg-slate-800/50 border border-slate-700/50 p-4 rounded-xl hover:bg-slate-800 transition-colors flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                              <div>
-                                  <div className="font-bold text-lg text-slate-200">{league.name}</div>
+                          <div key={league.id} className="bg-slate-800/50 border border-slate-700/50 p-4 rounded-xl hover:bg-slate-800 transition-colors relative group flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pr-16">
+                              {/* Action Buttons - Unified Segmented Control */}
+                                <div className="absolute top-3 right-3 flex flex-col z-30 bg-slate-900 border border-slate-600 rounded-lg shadow-xl overflow-hidden">
+                                    <button 
+                                        onClick={(e) => { 
+                                            e.preventDefault();
+                                            e.stopPropagation(); 
+                                            setEditingLeague(league); 
+                                        }}
+                                        className="p-2.5 hover:bg-slate-800 text-slate-400 hover:text-indigo-300 transition-colors border-b border-slate-700 flex items-center justify-center"
+                                        title="Editar Liga"
+                                    >
+                                        <EditIcon className="w-5 h-5" />
+                                    </button>
+                                    <button 
+                                        onClick={(e) => { 
+                                            e.preventDefault();
+                                            e.stopPropagation(); 
+                                            handleRequestDelete(league.id); 
+                                        }}
+                                        className="p-2.5 hover:bg-slate-800 text-slate-400 hover:text-red-400 transition-colors flex items-center justify-center"
+                                        title="Excluir Liga"
+                                    >
+                                        <TrashIcon className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                              <div className="w-full">
+                                  <div className="font-bold text-lg text-slate-200 pr-4 truncate">{league.name}</div>
                                   <p className="text-xs text-slate-500 mb-1">{new Date(league.createdAt).toLocaleDateString('pt-BR')}</p>
                                   <div className="font-semibold text-md flex items-center gap-2">
                                     <span>🏆</span>
                                     <span className="text-yellow-400">{winner?.name || 'N/A'}</span>
                                   </div>
                               </div>
-                              <button onClick={() => handleViewLeague(league.id)} className="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 px-5 rounded-lg transition">
+                              
+                              <button onClick={() => handleViewLeague(league.id)} className="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 px-5 rounded-lg transition mt-2 sm:mt-0">
                                   Detalhes
                               </button>
                           </div>
@@ -434,6 +532,21 @@ const App: React.FC = () => {
             onClose={() => setIsImportModalOpen(false)} 
             onRequestFileUpload={requestFileUpload}
             onImportText={handleTextImport}
+        />
+
+        <LeagueSettingsModal 
+            isOpen={!!editingLeague}
+            onClose={() => setEditingLeague(null)}
+            league={editingLeague}
+            onSave={handleSaveLeagueDetails}
+        />
+
+        <ConfirmModal
+            isOpen={!!leagueToDeleteId}
+            title="Excluir Liga"
+            message="Tem certeza que deseja excluir esta liga permanentemente? Todo o histórico de partidas e pontuações será perdido. Esta ação não pode ser desfeita."
+            onConfirm={confirmDeleteLeague}
+            onCancel={() => setLeagueToDeleteId(null)}
         />
       </div>
     );
